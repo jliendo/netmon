@@ -1,0 +1,18 @@
+<html>
+    <body>
+    Traceroute (Max. 1 segundo wait, Max 8 saltos)<br>
+    Direccion IP destino::<br>
+    <form action="" method="POST">
+        {% csrf_token %}
+        {{ form }}
+        <input type="submit" value="Trace!">
+    </form>
+
+    {% if output %}
+    <blockquote>
+    {{ output|linebreaks }}
+    </blockquote>
+    {% endif %}
+
+    </body>
+</html>
