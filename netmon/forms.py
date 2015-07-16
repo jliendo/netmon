@@ -2,6 +2,10 @@ from django import forms
 
 
 class DNSForm(forms.Form):
+    dns_server = forms.CharField(
+        required=False,
+        max_length=254,
+    )
     domain = forms.CharField(
         required=True,
         max_length=254,

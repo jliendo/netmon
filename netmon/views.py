@@ -16,7 +16,7 @@ class CDPView(TemplateView):
         context = super(CDPView, self).get_context_data(**kwargs)
         cdp_file = "/tmp/cdp.pcap"
         if os.path.isfile(cdp_file):
-            command = "/usr/bin/sudo /usr/bin/tshark " \
+            command = "/usr/bin/tshark " \
                       "-r {} -V".format(cdp_file)
             output = os.popen(command).read()
         else:
@@ -30,10 +30,14 @@ class LLDPView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(LLDPView, self).get_context_data(**kwargs)
-        command = '/usr/bin/sudo /usr/bin/tshark -q -i eth0 ' \
-                  '-V -f "ether proto 0x88cc" -c 1'
-        resultado = os.popen(command).read()
-        context['output'] = resultado
+        lldp_file = "/tmp/lldp.pcap"
+        if os.path.isfile(lldp_file):
+            command = "/usr/bin/tshark " \
+                      "-r {} -V".format(lldp_file)
+            output = os.popen(command).read()
+        else:
+            output = "No existe lldp_file. Intenta unos segundos mas tarde."
+        context['output'] = output
         return context
 
 
@@ -41,11 +45,11 @@ class DHCPView(TemplateView):
     template_name = "dhcp.html"
 
     def get_context_data(self, **kwargs):
-        interface = 'wlan0'
+        interface = 'eth0'
         context = super(DHCPView, self).get_context_data(**kwargs)
         command = 'cat /sys/class/net/{}/address'.format(interface)
         mac = os.popen(command).read().strip()
-        command = '/usr/bin/sudo /usr/local/bin/dhtest ' \
+        command = '/usr/local/bin/dhtest ' \
                   '-m {} -V -i {}'.format(mac, interface)
         resultado = os.popen(command).read()
         resultado = ''.join([i if ord(i) < 128 else ' ' for i in resultado])
@@ -60,8 +64,13 @@ class DNSView(FormView):
 
     def form_valid(self, form):
         domain = form.cleaned_data['domain']
-        command = "/usr/bin/dig {} any".format(domain)
+        dns_server = form.cleaned_data['dns_server']
+        if dns_server:
+            dns_server = "@{}".format(dns_server)
+        command = "/usr/bin/timeout 10 /usr/bin/dig {} {} any".format(dns_server, domain)
         resultado = os.popen(command).read()
+        if not resultado:
+            resultado = "Timeout. Intentar de nuevo."
         return self.render_to_response(
             self.get_context_data(
                 form=form,
@@ -84,7 +93,7 @@ class PingView(FormView):
 
     def form_valid(self, form):
         target = form.cleaned_data['target']
-        command = "/bin/ping -c 3 -W 1 {}".format(target)
+        command = "/usr/bin/timeout 10 /bin/ping -c 3 -W 1 {}".format(target)
         resultado = os.popen(command).read()
         return self.render_to_response(
             self.get_context_data(
@@ -108,7 +117,7 @@ class TraceView(FormView):
 
     def form_valid(self, form):
         target = form.cleaned_data['target']
-        command = "/usr/bin/traceroute -n -w 1 -m 8 {}".format(target)
+        command = "/usr/bin/timeout 10 /usr/bin/traceroute -n -w 1 -m 8 {}".format(target)
         resultado = os.popen(command).read()
         return self.render_to_response(
             self.get_context_data(

@@ -3,7 +3,9 @@
     Nombre de dominio:<br>
     <form action="" method="POST">
         {% csrf_token %}
-        {{ form }}
+        <table>
+            {{ form.as_table }}
+        </table>
         <input type="submit" value="Get DNS Records">
     </form>
 
